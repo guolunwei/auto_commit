@@ -3,4 +3,4 @@ watch_paths:
   - /home/student/cloud
   - /home/student/pythonProject
 repo_path: /home/student/.auto_commit/repo
-commit_interval: 600
+commit_interval: 300
