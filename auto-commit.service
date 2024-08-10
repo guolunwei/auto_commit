@@ -1,0 +1,12 @@
+[Unit]
+Description=auto commit servie
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/student/bin/auto_commit
+ExecStart=/home/student/pythonProject/venv/bin/python commit.py
+KillMode=process
+
+[Install]
+WantedBy=default.target
