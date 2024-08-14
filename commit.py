@@ -97,7 +97,6 @@ class GitAutoCommitHandler(FileSystemEventHandler):
             # Set a timer to check the directory snapshot after a certain interval
             commit_timer = Timer(self.commit_interval, self.check_snapshot)
             commit_timer.start()
-            print(commit_timer)
 
     def check_snapshot(self):
         """
@@ -125,8 +124,6 @@ class GitAutoCommitHandler(FileSystemEventHandler):
             if items:
                 self.flag += 1
                 logger.info(f"{change_type}: {items}")
-                logger.info(f"{self.exclude_patterns}")
-                logger.info(f"{self.exclude_file}")
         if self.flag:
             self.sync_and_commit()
 
