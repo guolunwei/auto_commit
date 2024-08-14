@@ -4,3 +4,4 @@ watch_paths:
   - /home/student/pythonProject
 repo_path: /home/student/.auto_commit/repo
 commit_interval: 300
+exclude_file: exclude_patterns
