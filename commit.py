@@ -90,7 +90,6 @@ class GitAutoCommitHandler(FileSystemEventHandler):
         :param event: File system event
         """
         if not event.is_directory and not self.match_patterns(event.src_path):
-            print("track:", event)
             global commit_timer
             if commit_timer:
                 commit_timer.cancel()
