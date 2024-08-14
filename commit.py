@@ -49,6 +49,15 @@ class Config:
         self.watch_paths = self.config.get('watch_paths', [])
         self.repo_path = self.config.get('repo_path', '')
         self.commit_interval = self.config.get('commit_interval', 10)
+        self.exclude_file = self.config.get('exclude_file', '')
+
+    @property
+    def exclude_patterns(self):
+        if self.exclude_file:
+            with open(self.exclude_file, mode='r', encoding='utf-8') as f:
+                patterns = f.readlines()
+                return [i.strip() for i in patterns]
+        return []
 
 
 class GitAutoCommitHandler(FileSystemEventHandler):
@@ -64,7 +73,15 @@ class GitAutoCommitHandler(FileSystemEventHandler):
         self.snapshot = DirectorySnapshot(self.watch_path)
         self.repo_path = config.repo_path
         self.commit_interval = config.commit_interval
+        self.exclude_file = config.exclude_file
+        self.exclude_patterns = config.exclude_patterns
         self.flag = 0
+
+    def match_patterns(self, path):
+        for pattern in self.exclude_patterns:
+            if pattern in path:
+                return True
+        return False
 
     def on_any_event(self, event):
         """
@@ -72,13 +89,16 @@ class GitAutoCommitHandler(FileSystemEventHandler):
 
         :param event: File system event
         """
-        global commit_timer
-        if commit_timer:
-            commit_timer.cancel()
+        if not event.is_directory and not self.match_patterns(event.src_path):
+            print("track:", event)
+            global commit_timer
+            if commit_timer:
+                commit_timer.cancel()
 
-        # Set a timer to check the directory snapshot after a certain interval
-        commit_timer = Timer(self.commit_interval, self.check_snapshot)
-        commit_timer.start()
+            # Set a timer to check the directory snapshot after a certain interval
+            commit_timer = Timer(self.commit_interval, self.check_snapshot)
+            commit_timer.start()
+            print(commit_timer)
 
     def check_snapshot(self):
         """
@@ -106,6 +126,8 @@ class GitAutoCommitHandler(FileSystemEventHandler):
             if items:
                 self.flag += 1
                 logger.info(f"{change_type}: {items}")
+                logger.info(f"{self.exclude_patterns}")
+                logger.info(f"{self.exclude_file}")
         if self.flag:
             self.sync_and_commit()
 
@@ -114,7 +136,8 @@ class GitAutoCommitHandler(FileSystemEventHandler):
         Synchronize the local directory to the repository and commit changes.
         """
         # Synchronize the local directory to the repository
-        rsync_cmd = ['rsync', '-avz', '--delete', '--exclude-from=exclude_patterns', self.watch_path, self.repo_path]
+        rsync_cmd = ['rsync', '-avz', '--delete', f'--exclude-from={self.exclude_file}',
+                     self.watch_path, self.repo_path]
         execute_cmd_with_logging(rsync_cmd, message="Directory synchronized successfully.")
 
         # Add all changes to git
@@ -178,4 +201,3 @@ if __name__ == "__main__":
     conf = Config('./config.yaml')
     manager = AutoCommitManager(conf)
     manager.start_watching()
-
